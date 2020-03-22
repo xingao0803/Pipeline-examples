@@ -1,0 +1,161 @@
+pipelines:
+
+
+  - name: npm_build
+  # Global configuration section for the entire pipeline
+    configuration:
+      environmentVariables:
+        readOnly:
+          ArtIP: $(echo ${int_artifactory_url}|awk -F '/' '{print $3}')
+          Version: 1.2.$run_number
+    steps:
+     
+     
+      - name: npm_prep
+        type: NpmBuild
+        configuration:
+          runtime:
+            type: image
+            image:
+              custom:
+                name: 182.92.214.141:8082/pipeline-docker-lib-local/pipelines-u18node
+                tag: "10.16.3"
+          npmArgs:   --no-progress --no-audit
+          repositoryName:   pipeline-npm-virtual
+          sourceLocation:   tutorial/step2-create-ui-pkg
+          integrations:
+            - name: artifactory
+          inputResources:
+            - name: gitRepo_code
+        execution:
+          onStart:
+            - pushd ${res_gitRepo_code_resourcePath}/tutorial/step2-create-ui-pkg
+            - npm version ${Version} --no-git-tag-version
+            - popd
+
+
+
+      - name: npm_compile
+        type: Bash
+        configuration:
+          inputSteps:
+            - name: npm_prep
+          integrations:
+            - name: artifactory
+        execution:
+          onStart:
+            - export tempStateLocation="$step_tmp_dir/npmSourceState"
+            # Restore file from previous step to current step
+            - restore_run_files npmBuildInputGitRepo $tempStateLocation
+            - pushd $tempStateLocation/tutorial/step2-create-ui-pkg
+            - npm install shelljs
+            - npm install 
+            # Add files to npm pipeline target
+            - add_run_files $tempStateLocation/. npmBuildInputGitRepo
+            - popd
+  
+      - name: npm_publish
+        type: NpmPublish
+        configuration:
+          repositoryName:       pipeline-npm-virtual
+          integrations:
+            - name: artifactory
+          inputSteps:
+            - name: npm_compile
+        execution:
+          onStart:
+            - export inputNpmBuildStepName="npm_prep"
+            
+#      - name: npm_scan_publish
+#        type: PublishBuildInfo
+#        configuration:
+#          forceXrayScan:    True
+#          inputSteps:
+#            - name:    npm_publish
+#          outputResources:
+#            - name:     npmBuildInfo
+#
+#                                              #     Currently not in use
+#      - name: npm_promote
+#        type: PromoteBuild
+#        configuration:
+#          targetRepository:      team1-npm-staging-us
+#          includeDependencies:   false
+#          status:                Passed
+#          comment:               Artifact passed Xray Scan
+#          copy:                  true
+#          inputResources:
+#            - name:    npmBuildInfo    # optional
+#              trigger: true
+#          outputResources:
+#            - name: promoted_npmBuild_Info
+#
+
+
+      - name: npm_docker_build
+        type: DockerBuild
+        configuration:
+          dockerFileLocation: tutorial/step2-create-ui-pkg
+          dockerFileName: Dockerfile
+          dockerImageName: ${ArtIP}/pipeline-docker-dev-local/npm-app
+          dockerImageTag: ${Version}
+          inputSteps:
+            - name: npm_publish
+          inputResources: 
+            - name: gitRepo_code
+            - name: npm_fileSpec
+#            - name: promoted_npmBuild_Info
+#              trigger: true         #     Currently not in use
+          integrations:
+            - name: artifactory
+        execution:
+          onStart:
+            - pushd ${res_gitRepo_code_resourcePath}/tutorial/step2-create-ui-pkg
+            # Creating a Folder for the fileSpec Target
+            - mkdir -p npm_results
+            - popd
+          onSuccess:
+            - echo "Congrats The Docker image was build"
+
+
+
+      - name: Npm_docker_push
+        type: DockerPush
+        configuration:
+          targetRepository:     pipeline-docker-dev-local
+          autoPublishBuildInfo: true
+          integrations:
+            - name:  artifactory
+          inputSteps:
+            - name: npm_docker_build
+          outputResources:
+            - name: docker_npmBuild_Info
+
+
+
+      - name: npm_docker_scan
+        type: XrayScan
+        configuration:
+          waitUntilFinish: true
+          inputResources:
+            - name: docker_npmBuild_Info
+              trigger: true
+          outputResources: 
+            - name: scanned_npm_dockerBuild_Info
+
+
+
+
+      - name: npm_docker_promote
+        type: PromoteBuild
+        configuration:
+          targetRepository:      pipeline-docker-staging-local 
+          includeDependencies:   true   
+          status:                Passed
+          comment:               Artifact passed Xray Scan
+          copy:                  false
+          inputResources:
+            - name:    scanned_npm_dockerBuild_Info
+              trigger: true       
+          outputResources:
+            - name: final_docker_npmBuild_Info 

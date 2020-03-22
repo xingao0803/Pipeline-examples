@@ -1,0 +1,140 @@
+resources:
+        
+  - name: gitRepo_code
+    type: GitRepo
+    configuration:
+      path: xingao0803/Pipeline-projects
+      gitProvider: GitRepo
+      branches:
+        include: master
+
+  - name:       gradle_fileSpec
+    type:       FileSpec
+    configuration:     
+      sourceArtifactory:    artifactory
+      pattern:              pipeline-gradle-dev-local/com/jfrog/frogsws/0.1.0-*/frogsws-0.1.0-*.jar
+      target:               gradle_results/*.jar
+      buildName:            gradle_build   # optional
+      buildNumber:          ${run_number}
+
+  - name:       npm_fileSpec
+    type:       FileSpec
+    configuration:     
+      sourceArtifactory:    artifactory
+      pattern:              pipleline-npm-dev-local/angular-animate/-/angular-animate-1.4.14.tgz
+      target:               npm_results/
+      buildName:            npm_build   # optional
+      buildNumber:          ${run_number}
+
+#-------------------- Gradle BuildInfo -----------------------------
+  - name: gradleBuildInfo
+    type: BuildInfo
+    configuration:
+      sourceArtifactory: artifactory
+      buildName: gradle_build
+      buildNumber: ${run_number}
+      
+  - name: scanned_gradleBuild_Info
+    type: BuildInfo
+    configuration:
+      sourceArtifactory: artifactory
+      buildName: gradle_build
+      buildNumber: ${run_number}
+      
+  - name: promoted_gradleBuild_Info
+    type: BuildInfo
+    configuration:
+      sourceArtifactory: artifactory
+      buildName: gradle_build
+      buildNumber: ${run_number}
+
+  - name: docker_gradleBuild_Info
+    type: BuildInfo
+    configuration:
+      sourceArtifactory: artifactory
+      buildName: gradle_build
+      buildNumber: ${run_number}
+
+
+  - name: scanned_gradle_dockerBuild_Info
+    type: BuildInfo
+    configuration:
+      sourceArtifactory: artifactory
+      buildName: gradle_build
+      buildNumber: ${run_number}
+
+
+  - name: promoted_docker_gradleBuild_Info
+    type: BuildInfo
+    configuration:
+      sourceArtifactory: artifactory
+      buildName: gradle_build
+      buildNumber: ${run_number}
+
+
+  - name: final_docker_gradleBuild_Info
+    type: BuildInfo
+    configuration:
+      sourceArtifactory: artifactory
+      buildName: gradle_build
+      buildNumber: ${run_number}
+
+
+#------------------ NPM Build INFO -------------------------
+
+ 
+
+  - name: npmBuildInfo
+    type: BuildInfo
+    configuration:
+      sourceArtifactory: artifactory
+      buildName: npm_build
+      buildNumber: ${run_number}
+
+  - name: scanned_npmBuild_Info
+    type: BuildInfo
+    configuration:
+      sourceArtifactory: artifactory
+      buildName: npm_build
+      buildNumber: ${run_number}
+      
+  - name: promoted_npmBuild_Info
+    type: BuildInfo
+    configuration:
+      sourceArtifactory: artifactory
+      buildName: npm_build
+      buildNumber: ${run_number}
+      
+      
+  - name: docker_npmBuild_Info
+    type: BuildInfo
+    configuration:
+      sourceArtifactory: artifactory
+      buildName: npm_build
+      buildNumber: ${run_number}
+   
+   
+  - name: scanned_npm_dockerBuild_Info
+    type: BuildInfo
+    configuration:
+      sourceArtifactory: artifactory
+      buildName: npm_build
+      buildNumber: ${run_number}
+
+
+  - name: promoted_docker_npmBuild_Info
+    type: BuildInfo
+    configuration:
+      sourceArtifactory: artifactory
+      buildName: npm_build
+      buildNumber: ${run_number}  
+      
+  - name: final_docker_npmBuild_Info 
+    type: BuildInfo
+    configuration:
+      sourceArtifactory: artifactory
+      buildName: npm_build
+      buildNumber: ${run_number}    
+      
+
+
