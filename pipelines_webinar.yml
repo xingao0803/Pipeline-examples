@@ -2,15 +2,15 @@ resources:
   - name: myGitRepo
     type: GitRepo
     configuration:
-      gitProvider: Github_SolEng
-      path: jfrogtraining/pipelines_swampup2020
+      gitProvider: github_xin
+      path: xingao0803/Pipeline-examples
       branches:
-        include: training
+        include: master
   - name: DockerAppImage
     type: Image
     configuration:
-      registry: artifactory
-      sourceRepository: docker
+      registry: artidocker
+      sourceRepository: docker-local
       imageName: docker.artifactory/swampup_docker_app_demo
       imageTag: '${run_number}'
       autoPull: true
@@ -42,7 +42,7 @@ pipelines:
               trigger: false
           integrations:
             - name: artifactory
-            - name: myDockerRegistry
+            - name: artidocker
           runtime:
             type: image
             image:
@@ -65,7 +65,7 @@ pipelines:
         configuration:
           npmArgs: --no-progress --no-audit
           sourceLocation: npm-frontend-service
-          repositoryName: npm-dev-local
+          repositoryName: npm-local
           inputResources:
             - name: myGitRepo
               trigger: false
@@ -78,7 +78,7 @@ pipelines:
       - name: publish_frontend
         type: NpmPublish
         configuration:
-          repositoryName: team1-npm
+          repositoryName: npm-prod-local
           inputSteps:
             - name: bld_frontend
           integrations:
@@ -113,7 +113,7 @@ pipelines:
         type: DockerPush
         configuration:
           affinityGroup: fmkGroup
-          targetRepository: team1-docker
+          targetRepository: docker-local-prod
           forceXrayScan: true
           autoPublishBuildInfo: true
           integrations:
